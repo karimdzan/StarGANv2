@@ -1,4 +1,4 @@
-name: "train"
+name: "one_batch_test"
 n_gpu: 1
 
 StarGANv2:
