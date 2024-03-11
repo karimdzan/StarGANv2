@@ -1,0 +1,11 @@
+torch==2.1.0
+torchvision==0.16.0
+numpy
+tqdm
+matplotlib
+pandas
+wandb
+torchaudio~=2.1.0
+pillow
+hydra-core
+lpips
