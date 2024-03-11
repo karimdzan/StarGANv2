@@ -18,13 +18,13 @@ class ResidualBlock(nn.Module):
         self.downsample = downsample
         self.learned_shortcut = input_dim != output_dim
         self.conv_layers = nn.Sequential(
-            nn.InstanceNorm2d(output_dim, affine=True) if normalize else nn.Identity(),
+            nn.InstanceNorm2d(input_dim, affine=True) if normalize else nn.Identity(),
+            self.activation,
+            nn.Conv2d(input_dim, input_dim, 3, stride=1, padding=1),
+            nn.AvgPool2d(2) if self.downsample else nn.Identity(),
+            nn.InstanceNorm2d(input_dim, affine=True) if normalize else nn.Identity(),
             self.activation,
             nn.Conv2d(input_dim, output_dim, 3, stride=1, padding=1),
-            nn.AvgPool2d(2) if self.downsample else nn.Identity(),
-            nn.InstanceNorm2d(output_dim, affine=True) if normalize else nn.Identity(),
-            self.activation,
-            nn.Conv2d(output_dim, output_dim, 3, stride=1, padding=1),
         )
         self.shortcut = nn.Sequential(
             nn.Conv2d(input_dim, output_dim, 1, stride=1, padding=0, bias=False)
@@ -34,7 +34,8 @@ class ResidualBlock(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return (self.shortcut(x) + self.conv_layers(x)) / np.sqrt(2)
+        res = (self.shortcut(x) + self.conv_layers(x)) / np.sqrt(2)
+        return res
 
 
 class AdaptiveInstanceNormalization(nn.Module):

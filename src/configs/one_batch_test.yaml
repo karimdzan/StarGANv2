@@ -14,20 +14,20 @@ StarGANv2:
     latent_dim: 16
     style_dim: 64
     hidden_dim: 512
-    num_domains: 2
+    num_domains: 10
   style_encoder_config:
     initial_dim: 64
     img_size: 256
     style_dim: 64
-    num_domains: 2
+    num_domains: 10
     max_conv_dim: 512
   discriminator_config:
     initial_dim: 64
     img_size: 256
-    num_domains: 2
+    num_domains: 10
     max_conv_dim: 512
 
-batch_size: 4
+batch_size: 8
 
 metrics:
   - _target_: src.metric.LPIPS_Wrapper
@@ -36,9 +36,9 @@ metrics:
 loss:
   _target_: src.loss.StarGANv2Loss
   generator_loss_config:
-    lambda_sty: 0.5
-    lambda_ds: 0.5
-    lambda_cyc: 10
+    lambda_sty: 1.
+    lambda_ds: 2.
+    lambda_cyc: 1.
   discriminator_loss_config:
     lambda_reg: 10
 
@@ -63,20 +63,20 @@ optimizer_mn:
   betas: [0., 0.999]
 
 lr_scheduler_d:
-  _target_: CosineAnnealingWarmRestarts
-  T_0: 10
+  _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  T_0: 5
 
 lr_scheduler_g:
-  _target_: CosineAnnealingWarmRestarts
-  T_0: 10
+  _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  T_0: 5
 
 lr_scheduler_se:
-  _target_: CosineAnnealingWarmRestarts
-  T_0: 10
+  _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  T_0: 5
 
 lr_scheduler_mn:
-  _target_: CosineAnnealingWarmRestarts
-  T_0: 10
+  _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  T_0: 5
 
 data:
   train:
@@ -86,12 +86,14 @@ data:
       - _target_: src.datasets.celeba.CelebaCustomDataset
         root_dir: "../img_align_celeba"
         limit: 4
+
   ref:
     batch_size: ${batch_size}
     num_workers: 4
     datasets:
       - _target_: src.datasets.celeba.ReferenceDataset
         root_dir: "../img_align_celeba"
+        limit: 4
 
 wandb_key: b5bb9b937300c5d613b3a95f676708e5a88d2b7e
 

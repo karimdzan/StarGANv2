@@ -106,7 +106,7 @@ class StyleEncoder(BaseModel):
         initial_dim: int = 64,
         img_size: int = 256,
         style_dim: int = 64,
-        num_domains: int = 2,
+        num_domains: int = 10,
         max_conv_dim: int = 512,
     ) -> None:
         super(StyleEncoder, self).__init__()
@@ -163,7 +163,7 @@ class Discriminator(BaseModel):
         self,
         initial_dim: int = 64,
         img_size: int = 256,
-        num_domains: int = 2,
+        num_domains: int = 10,
         max_conv_dim: int = 512,
     ) -> None:
         super(Discriminator, self).__init__()
@@ -196,9 +196,7 @@ class Discriminator(BaseModel):
     def forward(self, x: torch.Tensor, domain_indices: torch.Tensor) -> torch.Tensor:
         x = self.blocks(x)
         x = self.flatten(x)  # (batch, num_domains)
-
         selected_style_codes = x[torch.arange(domain_indices.size(0)), domain_indices]
-
         return selected_style_codes
 
 

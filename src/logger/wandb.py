@@ -114,7 +114,7 @@ class WanDBWriter:
         reconstructed_images,
         table_name="Reference-guided Image Synthesis",
     ):
-        columns = ["Original", "Reference", "Output"]
+        columns = ["Original", "Reference", "Output", "Reconstructed"]
         image_table = wandb.Table(columns=columns)
 
         for orig, ref, out, rec in zip(

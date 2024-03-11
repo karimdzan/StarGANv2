@@ -23,10 +23,10 @@ class DiscriminatorLoss(nn.Module):
             x_ref is None
         ), "Either z_trg or x_ref must be provided, not both or neither"
         x_real.requires_grad_()
+        # y_org = torch.nonzero(y_org).squeeze(1)
         out_real = model.discriminator(x_real, y_org)
         loss_real = self.adv_loss(out_real, 1)
         loss_reg = self.gradient_penalty(out_real, x_real)
-
         # Handling fake images
         with torch.no_grad():
             if z_trg is not None:
@@ -37,10 +37,9 @@ class DiscriminatorLoss(nn.Module):
             x_fake = model.generator(x_real, s_trg)
         out_fake = model.discriminator(x_fake, y_trg)
         loss_fake = self.adv_loss(out_fake, 0)
-
         loss = loss_real + loss_fake + self.lambda_reg * loss_reg
         return {
-            "total": loss.item(),
+            "total": loss,
             "real": loss_real.item(),
             "fake": loss_fake.item(),
             "reg": loss_reg.item(),
@@ -106,7 +105,7 @@ class GeneratorLoss(nn.Module):
             + self.lambda_cyc * loss_cyc
         )
         return {
-            "total": loss.item(),
+            "total": loss,
             "adv": loss_adv.item(),
             "sty": loss_sty.item(),
             "ds": loss_ds.item(),

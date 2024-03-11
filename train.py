@@ -11,14 +11,10 @@ import hydra
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
-import src.loss as module_loss
-import src.metric as module_metric
 from src.trainer import Trainer
 from src.utils import prepare_device
 from src.utils.object_loading import get_dataloaders
 from src.utils.parse_config import ConfigParser
-import src.utils.lr_scheduler
-
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -55,12 +51,10 @@ def main(config: DictConfig):
         model = torch.nn.DataParallel(model, device_ids=device_ids)
 
     # get function handles of loss and metrics
-    loss_module = instantiate(config["loss"], module_loss).to(device)
-    metrics = [
-        instantiate(metric_dict, module_metric) for metric_dict in config["metrics"]
-    ]
+    loss_module = instantiate(config["loss"]).to(device)
+    metrics = [instantiate(metric_dict) for metric_dict in config["metrics"]]
 
-    logger.info(f'Len epoch {config["trainer"]["len_epoch"]}')
+    # logger.info(f'Len epoch {config["trainer"]["len_epoch"]}')
     logger.info(f'Epochs {config["trainer"]["epochs"]}')
     logger.info(f'Dataset size {len(dataloaders["train"].dataset)}')
     # build optimizer, learning rate scheduler. delete every line containing lr_scheduler for
@@ -69,37 +63,22 @@ def main(config: DictConfig):
         lambda p: p.requires_grad,
         model.discriminator.parameters(),
     )
-    optimizer_d = config.init_obj(
-        config["optimizer_d"], torch.optim, trainable_params_d
-    )
+    optimizer_d = instantiate(config["optimizer_d"], trainable_params_d)
     trainable_params_g = filter(lambda p: p.requires_grad, model.generator.parameters())
-    optimizer_g = config.init_obj(
-        config["optimizer_g"], torch.optim, trainable_params_g
-    )
+    optimizer_g = instantiate(config["optimizer_g"], trainable_params_g)
     trainable_params_se = filter(
         lambda p: p.requires_grad, model.style_encoder.parameters()
     )
-    optimizer_se = config.init_obj(
-        config["optimizer_se"], torch.optim, trainable_params_se
-    )
+    optimizer_se = instantiate(config["optimizer_se"], trainable_params_se)
     trainable_params_mn = filter(
         lambda p: p.requires_grad, model.mapping_network.parameters()
     )
-    optimizer_mn = config.init_obj(
-        config["optimizer_mn"], torch.optim, trainable_params_mn
-    )
-    lr_scheduler_d = config.init_obj(
-        config["lr_scheduler_d"], torch.optim.lr_scheduler, optimizer_d
-    )
-    lr_scheduler_g = config.init_obj(
-        config["lr_scheduler_g"], torch.optim.lr_scheduler, optimizer_g
-    )
-    lr_scheduler_se = config.init_obj(
-        config["lr_scheduler_d"], torch.optim.lr_scheduler, optimizer_d
-    )
-    lr_scheduler_mn = config.init_obj(
-        config["lr_scheduler_g"], torch.optim.lr_scheduler, optimizer_g
-    )
+    optimizer_mn = instantiate(config["optimizer_mn"], trainable_params_mn)
+
+    lr_scheduler_d = instantiate(config["lr_scheduler_d"], optimizer_d)
+    lr_scheduler_g = instantiate(config["lr_scheduler_g"], optimizer_g)
+    lr_scheduler_se = instantiate(config["lr_scheduler_d"], optimizer_d)
+    lr_scheduler_mn = instantiate(config["lr_scheduler_g"], optimizer_g)
 
     optimizers = {
         "generator": optimizer_g,

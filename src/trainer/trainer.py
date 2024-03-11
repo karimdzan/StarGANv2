@@ -72,7 +72,16 @@ class Trainer(BaseTrainer):
         """
         Move all necessary tensors to the HPU
         """
-        for tensor_for_gpu in ["wav_gt", "mel_gt"]:
+        for tensor_for_gpu in ["x", "y"]:
+            batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
+        return batch
+
+    @staticmethod
+    def move_batch_to_device_ref(batch, device: torch.device):
+        """
+        Move all necessary tensors to the HPU
+        """
+        for tensor_for_gpu in ["ref1", "ref2", "target"]:
             batch[tensor_for_gpu] = batch[tensor_for_gpu].to(device)
         return batch
 
@@ -93,13 +102,20 @@ class Trainer(BaseTrainer):
 
         self.train_metrics.reset()
         self.writer.add_scalar("epoch", epoch)
-        for batch_idx, (batch, batch_ref) in enumerate(
+        dataloader_iterator = iter(self.ref_dataloader)
+
+        for batch_idx, batch in enumerate(
             tqdm(
-                zip(self.train_dataloader, self.ref_dataloader),
+                self.train_dataloader,
                 desc="train",
                 total=self.len_epoch,
             )
         ):
+            try:
+                batch_ref = next(dataloader_iterator)
+            except StopIteration:
+                dataloader_iterator = iter(self.ref_dataloader)
+                batch_ref = next(dataloader_iterator)
             try:
                 batch = self.process_batch(
                     batch,
@@ -123,12 +139,12 @@ class Trainer(BaseTrainer):
                     "Train Epoch: {} {} DLoss_latent: {:.6f} GLoss_latent: {:.6f} DLoss_ref: {:.6f} GLoss_ref: {:.6f} SELoss {:.6f} MNLoss {:.6f}".format(
                         epoch,
                         self._progress(batch_idx),
-                        batch["gen_latent"].item(),
-                        batch["disc_latent"].item(),
-                        batch["gen_ref"].item(),
-                        batch["disc_ref"].item(),
-                        batch["cyc"].item(),
-                        batch["sty"].item(),
+                        batch["gen_latent"],
+                        batch["disc_latent"],
+                        batch["gen_ref"],
+                        batch["disc_ref"],
+                        batch["cyc"],
+                        batch["sty"],
                     )
                 )
                 self.writer.add_scalar(
@@ -159,7 +175,7 @@ class Trainer(BaseTrainer):
                 ref = self.denormalize(batch_ref["ref1"])
                 x_fake = self.denormalize(x_fake)
                 x_rec = self.denormalize(x_rec)
-                self.writer.add_image_table(x, ref, x_fake, x_rec)
+                self.writer.add_table_images(x, ref, x_fake, x_rec)
             if batch_idx >= self.len_epoch:
                 break
         log = last_train_metrics
@@ -173,14 +189,14 @@ class Trainer(BaseTrainer):
 
     def process_batch(self, batch, batch_ref, batch_idx, metrics: MetricTracker):
         batch = self.move_batch_to_device(batch, self.device)
-        batch_ref = self.move_batch_to_device(batch_ref, self.device)
+        batch_ref = self.move_batch_to_device_ref(batch_ref, self.device)
 
         self._clip_grad_norm(self.model.discriminator)
 
         x_real, y_org = batch["x"], batch["y"]
         x_ref, x_ref2, y_trg = batch_ref["ref1"], batch_ref["ref2"], batch_ref["target"]
-        z_trg = torch.randn(x_real.size(0), self.latent_dim)
-        z_trg2 = torch.randn(x_real.size(0), self.latent_dim)
+        z_trg = torch.randn(x_real.size(0), self.latent_dim).to(self.device)
+        z_trg2 = torch.randn(x_real.size(0), self.latent_dim).to(self.device)
 
         # train the discriminator
         d_loss = self.criterion.discriminator_loss(
@@ -188,16 +204,16 @@ class Trainer(BaseTrainer):
         )
         self._reset_grad()
         d_loss["total"].backward()
-        self.optimizers["discriminator"].step()
-        batch["disc_latent"] = d_loss["total"]
+        self.optimizer_d.step()
+        batch["disc_latent"] = d_loss["total"].item()
 
         d_loss = self.criterion.discriminator_loss(
             self.model, x_real, y_org, y_trg, x_ref=x_ref
         )
         self._reset_grad()
         d_loss["total"].backward()
-        self.optimizers["discriminator"].step()
-        batch["disc_ref"] = d_loss["total"]
+        self.optimizer_d.step()
+        batch["disc_ref"] = d_loss["total"].item()
 
         # train the generator
         g_loss = self.criterion.generator_loss(
@@ -205,11 +221,11 @@ class Trainer(BaseTrainer):
         )
         self._reset_grad()
         g_loss["total"].backward()
-        self.optimizers["generator"].step()
-        self.optimizers["mapping_network"].step()
-        self.optimizers["style_encoder"].step()
+        self.optimizer_g.step()
+        self.optimizer_mn.step()
+        self.optimizer_se.step()
 
-        batch["gen_latent"] = g_loss["total"]
+        batch["gen_latent"] = g_loss["total"].item()
         batch["cyc"] = g_loss["cyc"]
         batch["sty"] = g_loss["sty"]
         g_loss = self.criterion.generator_loss(
@@ -217,14 +233,14 @@ class Trainer(BaseTrainer):
         )
         self._reset_grad()
         g_loss["total"].backward()
-        self.optimizers["generator"].step()
+        self.optimizer_g.step()
 
-        batch["gen_ref"] = g_loss["total"]
+        batch["gen_ref"] = g_loss["total"].item()
 
         self._clip_grad_norm(self.model.generator)
 
         for metric_key in metrics.keys():
-            metrics.update(metric_key, batch[metric_key].item())
+            metrics.update(metric_key, batch[metric_key])
 
         return batch
 
@@ -259,8 +275,10 @@ class Trainer(BaseTrainer):
             self.writer.add_scalar(f"{metric_name}", metric_tracker.avg(metric_name))
 
     def _reset_grad(self):
-        for optim in self.optimizers.values():
-            optim.zero_grad()
+        self.optimizer_d.zero_grad()
+        self.optimizer_g.zero_grad()
+        self.optimizer_se.zero_grad()
+        self.optimizer_mn.zero_grad()
 
     def denormalize(self, x):
         out = (x + 1) / 2

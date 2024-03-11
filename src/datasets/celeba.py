@@ -41,8 +41,8 @@ class CelebADataset(BaseDataset):
                     self.filenames.append(filename)
                     self.annotations.append([int(v) for v in row[1:]])
 
+        self.annotations = np.array(self.annotations)
         if limit is not None:
-            self.annotations = np.array(self.annotations)
             self.filenames = self.filenames[:limit]
 
     def __len__(self):
@@ -68,8 +68,8 @@ class CelebADataset(BaseDataset):
 
 
 class CelebaCustomDataset(CelebADataset):
-    def __init__(self, root_dir, transform=None, limit=None):
-        super().__init__(root_dir, transform, limit)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def __getitem__(self, idx):
         indices = [8, 9, 11, 15, 16, 20, 22, 28, 35, 39]
@@ -78,22 +78,28 @@ class CelebaCustomDataset(CelebADataset):
         new_target = target[indices]
         if sum(new_target) == 0:
             return self.__getitem__(np.random.randint(0, len(self)))
-        return {"x": image, "y": new_target}
+
+        nonzero_indices = torch.nonzero(new_target, as_tuple=True)[0]
+        shuffled_indices = torch.randperm(nonzero_indices.size(0))
+        return {"x": image, "y": nonzero_indices[shuffled_indices[0]]}
 
 
 class ReferenceDataset(CelebADataset):
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, transform=None, limit=None):
+        super().__init__(root_dir, transform, limit)
         self.samples, self.targets = self._make_dataset(root_dir)
+        if limit is not None:
+            self.samples = self.samples[:limit]
+            self.targets = self.targets[:limit]
         self.transform = transform
+        self.root_dir = root_dir
 
     def _make_dataset(self, root_dir):
         domains = [8, 9, 11, 15, 16, 20, 22, 28, 35, 39]
         fnames, fnames2, labels = [], [], []
         for idx, domain in enumerate(domains):
             cls_fnames = list(
-                compress(
-                    self.filenames, self.annotations["attributes"][domain] == 1
-                ).tolist()
+                compress(self.filenames, self.annotations[:, domain] == 1)
             )
             fnames += cls_fnames
             fnames2 += random.sample(cls_fnames, len(cls_fnames))
@@ -103,12 +109,16 @@ class ReferenceDataset(CelebADataset):
     def __getitem__(self, index):
         fname, fname2 = self.samples[index]
         label = self.targets[index]
-        img = Image.open(os.path.join(self.root_dir, fname)).convert("RGB")
-        img2 = Image.open(os.path.join(self.root_dir, fname2)).convert("RGB")
+        img = Image.open(
+            os.path.join(self.root_dir, "img_align_celeba/" + fname)
+        ).convert("RGB")
+        img2 = Image.open(
+            os.path.join(self.root_dir, "img_align_celeba/" + fname2)
+        ).convert("RGB")
         if self.transform is not None:
             img = self.transform(img)
             img2 = self.transform(img2)
-        return img, img2, label
+        return {"ref1": img, "ref2": img2, "target": label}
 
     def __len__(self):
         return len(self.targets)
