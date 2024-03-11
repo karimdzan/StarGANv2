@@ -43,5 +43,11 @@ data:
     batch_size: ${batch_size}
     num_workers: 4
     datasets:
-      - _target_: src.datasets.asvspoof.ASVSpoof
+      - _target_: src.datasets.celeba.CelebaCustomDataset
+        root_dir: "img_align_celeba"
+  ref:
+    batch_size: ${batch_size}
+    num_workers: 4
+    datasets:
+      - _target_: src.datasets.celeba.ReferenceDataset
         root_dir: "img_align_celeba"
