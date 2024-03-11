@@ -2,7 +2,7 @@ import torch
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 
-from src.trainer import BaseTrainer
+from src.trainer.base_trainer import BaseTrainer
 from src.utils import inf_loop, MetricTracker
 
 

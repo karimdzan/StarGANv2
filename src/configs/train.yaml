@@ -1,6 +1,8 @@
 name: "train"
 n_gpu: 1
 
+img_size: 256
+
 StarGANv2:
   _target_: src.model.StarGANv2
   generator_config:

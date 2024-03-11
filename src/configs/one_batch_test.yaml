@@ -1,29 +1,27 @@
 name: "one_batch_test"
 n_gpu: 1
 
+img_size: 256
+
 StarGANv2:
-  _target_: src.model.StarGANv2
+  _target_: src.model.model.StarGANv2
   generator_config:
-    _target_: src.model.Generator
     initial_dim: 64
     img_size: 256
     style_dim: 64
     max_conv_dim: 512
   mapping_network_config:
-    _target_: src.model.MappingNetwork
     latent_dim: 16
     style_dim: 64
     hidden_dim: 512
     num_domains: 2
   style_encoder_config:
-    _target_: src.model.StyleEncoder
     initial_dim: 64
     img_size: 256
     style_dim: 64
     num_domains: 2
     max_conv_dim: 512
   discriminator_config:
-    _target_: src.model.Discriminator
     initial_dim: 64
     img_size: 256
     num_domains: 2
@@ -37,6 +35,12 @@ metrics:
 
 loss:
   _target_: src.loss.StarGANv2Loss
+  generator_loss_config:
+    lambda_sty: 0.5
+    lambda_ds: 0.5
+    lambda_cyc: 10
+  discriminator_loss_config:
+    lambda_reg: 10
 
 optimizer_d:
   _target_: torch.optim.AdamW
@@ -80,14 +84,14 @@ data:
     num_workers: 4
     datasets:
       - _target_: src.datasets.celeba.CelebaCustomDataset
-        root_dir: "img_align_celeba"
+        root_dir: "../img_align_celeba"
         limit: 4
   ref:
     batch_size: ${batch_size}
     num_workers: 4
     datasets:
       - _target_: src.datasets.celeba.ReferenceDataset
-        root_dir: "img_align_celeba"
+        root_dir: "../img_align_celeba"
 
 wandb_key: b5bb9b937300c5d613b3a95f676708e5a88d2b7e
 

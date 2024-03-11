@@ -6,7 +6,8 @@ from torch.utils.data import Dataset
 import csv
 import numpy as np
 import random
-from src.datasets import BaseDataset
+from src.datasets.base_dataset import BaseDataset
+from itertools import compress
 
 
 class CelebADataset(BaseDataset):
@@ -67,6 +68,9 @@ class CelebADataset(BaseDataset):
 
 
 class CelebaCustomDataset(CelebADataset):
+    def __init__(self, root_dir, transform=None, limit=None):
+        super().__init__(root_dir, transform, limit)
+
     def __getitem__(self, idx):
         indices = [8, 9, 11, 15, 16, 20, 22, 28, 35, 39]
         image, target = super().__getitem__(idx)
@@ -77,42 +81,34 @@ class CelebaCustomDataset(CelebADataset):
         return {"x": image, "y": new_target}
 
 
-class ReferenceDataset(Dataset):
-    def __init__(self, root, transform=None, limit=None):
-        self.samples = self._make_dataset(root)
+class ReferenceDataset(CelebADataset):
+    def __init__(self, root_dir, transform=None):
+        self.samples, self.targets = self._make_dataset(root_dir)
         self.transform = transform
 
-    def _make_dataset(self, root):
-        domains = sorted(os.listdir(root))
-        samples = []
+    def _make_dataset(self, root_dir):
+        domains = [8, 9, 11, 15, 16, 20, 22, 28, 35, 39]
+        fnames, fnames2, labels = [], [], []
         for idx, domain in enumerate(domains):
-            class_dir = os.path.join(root, domain)
-            cls_fnames = os.listdir(class_dir)
-            random_pairs = random.sample(cls_fnames, len(cls_fnames))
-            for fname, fname2 in zip(cls_fnames, random_pairs):
-                if fname == fname2:
-                    fname2 = random_pairs[
-                        (random_pairs.index(fname2) + 1) % len(cls_fnames)
-                    ]
-                samples.append(
-                    (
-                        os.path.join(class_dir, fname),
-                        os.path.join(class_dir, fname2),
-                        idx,
-                    )
-                )
-        return samples
+            cls_fnames = list(
+                compress(
+                    self.filenames, self.annotations["attributes"][domain] == 1
+                ).tolist()
+            )
+            fnames += cls_fnames
+            fnames2 += random.sample(cls_fnames, len(cls_fnames))
+            labels += [idx] * len(cls_fnames)
+        return list(zip(fnames, fnames2)), labels
 
     def __getitem__(self, index):
-        fname, fname2, label = self.samples[index]
-        img = Image.open(fname).convert("RGB")
-        img2 = Image.open(fname2).convert("RGB")
-
+        fname, fname2 = self.samples[index]
+        label = self.targets[index]
+        img = Image.open(os.path.join(self.root_dir, fname)).convert("RGB")
+        img2 = Image.open(os.path.join(self.root_dir, fname2)).convert("RGB")
         if self.transform is not None:
             img = self.transform(img)
             img2 = self.transform(img2)
-
-        return {"ref1": img, "ref2": img2, "target": label}
+        return img, img2, label
 
     def __len__(self):
-        return len(self.samples)
+        return len(self.targets)

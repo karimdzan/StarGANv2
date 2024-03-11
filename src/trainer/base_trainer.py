@@ -5,7 +5,7 @@ from numpy import inf
 import os
 from glob import glob
 
-from src.base import BaseModel
+from src.model.base_model import BaseModel
 from src.logger import get_visualizer
 
 

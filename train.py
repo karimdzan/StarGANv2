@@ -55,9 +55,9 @@ def main(config: DictConfig):
         model = torch.nn.DataParallel(model, device_ids=device_ids)
 
     # get function handles of loss and metrics
-    loss_module = config.init_obj(config["loss"], module_loss).to(device)
+    loss_module = instantiate(config["loss"], module_loss).to(device)
     metrics = [
-        config.init_obj(metric_dict, module_metric) for metric_dict in config["metrics"]
+        instantiate(metric_dict, module_metric) for metric_dict in config["metrics"]
     ]
 
     logger.info(f'Len epoch {config["trainer"]["len_epoch"]}')

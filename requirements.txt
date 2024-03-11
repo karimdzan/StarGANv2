@@ -9,3 +9,4 @@ torchaudio~=2.1.0
 pillow
 hydra-core
 lpips
+pynvml

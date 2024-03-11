@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from src.loss import AdversarialLoss, GradientPenalty
+from src.loss.AdvLoss import AdversarialLoss, GradientPenalty
 
 
 class DiscriminatorLoss(nn.Module):

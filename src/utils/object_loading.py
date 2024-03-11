@@ -9,8 +9,8 @@ def get_dataloaders(configs: ConfigParser):
     dataloaders = {}
     transform = transforms.Compose(
         [
-            transforms.Resize(configs.img_size),
-            transforms.CenterCrop(configs.img_size),
+            transforms.Resize(configs["img_size"]),
+            transforms.CenterCrop(configs["img_size"]),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
         ]
@@ -27,7 +27,7 @@ def get_dataloaders(configs: ConfigParser):
         # create and join datasets
         datasets = []
         for ds in params["datasets"]:
-            datasets.append(instantiate(ds, transform))
+            datasets.append(instantiate(ds, transform=transform))
         assert len(datasets)
         if len(datasets) > 1:
             dataset = ConcatDataset(datasets)
