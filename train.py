@@ -77,8 +77,8 @@ def main(config: DictConfig):
 
     lr_scheduler_d = instantiate(config["lr_scheduler_d"], optimizer_d)
     lr_scheduler_g = instantiate(config["lr_scheduler_g"], optimizer_g)
-    lr_scheduler_se = instantiate(config["lr_scheduler_d"], optimizer_d)
-    lr_scheduler_mn = instantiate(config["lr_scheduler_g"], optimizer_g)
+    lr_scheduler_se = instantiate(config["lr_scheduler_se"], optimizer_se)
+    lr_scheduler_mn = instantiate(config["lr_scheduler_mn"], optimizer_mn)
 
     optimizers = {
         "generator": optimizer_g,

@@ -95,7 +95,7 @@ data:
         root_dir: "../img_align_celeba"
         limit: 4
 
-wandb_key: b5bb9b937300c5d613b3a95f676708e5a88d2b7e
+wandb_key: 
 
 trainer: 
   epochs: 5

@@ -1,4 +1,4 @@
-name: "one_batch_test"
+name: "train"
 n_gpu: 1
 
 img_size: 256
@@ -64,19 +64,19 @@ optimizer_mn:
 
 lr_scheduler_d:
   _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-  T_0: 5
+  T_0: 1
 
 lr_scheduler_g:
   _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-  T_0: 5
+  T_0: 1
 
 lr_scheduler_se:
   _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-  T_0: 5
+  T_0: 1
 
 lr_scheduler_mn:
   _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
-  T_0: 5
+  T_0: 1
 
 data:
   train:
@@ -92,7 +92,7 @@ data:
       - _target_: src.datasets.celeba.ReferenceDataset
         root_dir: "../img_align_celeba"
 
-wandb_key: b5bb9b937300c5d613b3a95f676708e5a88d2b7e
+wandb_key: 
 
 trainer: 
   epochs: 5

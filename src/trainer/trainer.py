@@ -58,6 +58,7 @@ class Trainer(BaseTrainer):
             "disc_ref",
             "sty",
             "cyc",
+            "grad norm",
             writer=self.writer,
         )
         self.evaluation_metrics = MetricTracker(
@@ -133,18 +134,19 @@ class Trainer(BaseTrainer):
                     continue
                 else:
                     raise e
+            self.train_metrics.update("grad norm", self.get_grad_norm())
             if batch_idx % self.log_step == 0:
                 self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
                 self.logger.debug(
                     "Train Epoch: {} {} DLoss_latent: {:.6f} GLoss_latent: {:.6f} DLoss_ref: {:.6f} GLoss_ref: {:.6f} SELoss {:.6f} MNLoss {:.6f}".format(
                         epoch,
                         self._progress(batch_idx),
-                        batch["gen_latent"],
                         batch["disc_latent"],
-                        batch["gen_ref"],
+                        batch["gen_latent"],
                         batch["disc_ref"],
-                        batch["cyc"],
+                        batch["gen_ref"],
                         batch["sty"],
+                        batch["cyc"],
                     )
                 )
                 self.writer.add_scalar(

@@ -4,7 +4,6 @@ import logging
 import os
 from datetime import datetime
 from functools import reduce, partial
-from operator import getitem
 from pathlib import Path
 
 
