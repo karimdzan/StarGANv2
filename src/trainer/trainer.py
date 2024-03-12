@@ -242,7 +242,8 @@ class Trainer(BaseTrainer):
         self._clip_grad_norm(self.model.generator)
 
         for metric_key in metrics.keys():
-            metrics.update(metric_key, batch[metric_key])
+            if metric_key != "grad norm":
+                metrics.update(metric_key, batch[metric_key])
 
         return batch
 
@@ -257,11 +258,11 @@ class Trainer(BaseTrainer):
         return base.format(current, total, 100.0 * current / total)
 
     @torch.no_grad()
-    def get_grad_norm(self, parameters, norm_type=2):
+    def get_grad_norm(self, norm_type=2):
+        parameters = self.model.parameters()
         if isinstance(parameters, torch.Tensor):
             parameters = [parameters]
         parameters = [p for p in parameters if p.grad is not None]
-
         total_norm = torch.norm(
             torch.stack(
                 [torch.norm(p.grad.detach(), norm_type).cpu() for p in parameters]
