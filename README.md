@@ -1,4 +1,4 @@
-# DLA. FastSpeech2 implementation.
+# StarGAN-v2 implementation.
 
 ## Preparations
 Make sure you run on Python version 3.8 or 3.9
@@ -74,4 +74,5 @@ src/
 ## Artifacts
 
 Report: #TODO
+
 Model checkpoints folder: https://drive.google.com/drive/folders/1JJo-omS6OjiTX6c9Ug3qjcE8PozB6Id5?usp=sharing
