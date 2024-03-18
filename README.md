@@ -47,6 +47,7 @@ The results will be in output folder.
 
 ## Repository Structure
 
+```
 src/
 ├── configs/                        # Configuration files
 ├── datasets/                       # Dataset modules
@@ -67,6 +68,7 @@ src/
 │   ├── __init__.py
 ├── trainer/                        # Training and trainer modules
 ├── utils/                          # Utility modules
+```
 
     
 ## Artifacts
