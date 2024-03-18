@@ -1,0 +1,134 @@
+{
+    "name": "one_batch_test",
+    "n_gpu": 1,
+    "img_size": 256,
+    "StarGANv2": {
+        "_target_": "src.model.model.StarGANv2",
+        "generator_config": {
+            "initial_dim": 64,
+            "img_size": 256,
+            "style_dim": 64,
+            "max_conv_dim": 512
+        },
+        "mapping_network_config": {
+            "latent_dim": 16,
+            "style_dim": 64,
+            "hidden_dim": 512,
+            "num_domains": 10
+        },
+        "style_encoder_config": {
+            "initial_dim": 64,
+            "img_size": 256,
+            "style_dim": 64,
+            "num_domains": 10,
+            "max_conv_dim": 512
+        },
+        "discriminator_config": {
+            "initial_dim": 64,
+            "img_size": 256,
+            "num_domains": 10,
+            "max_conv_dim": 512
+        }
+    },
+    "batch_size": 8,
+    "metrics": [
+        {
+            "_target_": "src.metric.LPIPS_Wrapper",
+            "name": "LPIPS_Wrapper"
+        }
+    ],
+    "loss": {
+        "_target_": "src.loss.StarGANv2Loss",
+        "generator_loss_config": {
+            "lambda_sty": 1.0,
+            "lambda_ds": 2.0,
+            "lambda_cyc": 1.0
+        },
+        "discriminator_loss_config": {
+            "lambda_reg": 10
+        }
+    },
+    "optimizer_d": {
+        "_target_": "torch.optim.AdamW",
+        "lr": 0.0001,
+        "betas": [
+            0.0,
+            0.999
+        ]
+    },
+    "optimizer_g": {
+        "_target_": "torch.optim.AdamW",
+        "lr": 0.0001,
+        "betas": [
+            0.0,
+            0.999
+        ]
+    },
+    "optimizer_se": {
+        "_target_": "torch.optim.AdamW",
+        "lr": 0.0001,
+        "betas": [
+            0.0,
+            0.999
+        ]
+    },
+    "optimizer_mn": {
+        "_target_": "torch.optim.AdamW",
+        "lr": 1e-06,
+        "betas": [
+            0.0,
+            0.999
+        ]
+    },
+    "lr_scheduler_d": {
+        "_target_": "torch.optim.lr_scheduler.CosineAnnealingWarmRestarts",
+        "T_0": 200
+    },
+    "lr_scheduler_g": {
+        "_target_": "torch.optim.lr_scheduler.CosineAnnealingWarmRestarts",
+        "T_0": 200
+    },
+    "lr_scheduler_se": {
+        "_target_": "torch.optim.lr_scheduler.CosineAnnealingWarmRestarts",
+        "T_0": 200
+    },
+    "lr_scheduler_mn": {
+        "_target_": "torch.optim.lr_scheduler.CosineAnnealingWarmRestarts",
+        "T_0": 200
+    },
+    "data": {
+        "train": {
+            "batch_size": 8,
+            "num_workers": 4,
+            "datasets": [
+                {
+                    "_target_": "src.datasets.celeba.CelebaCustomDataset",
+                    "root_dir": "../img_align_celeba"
+                }
+            ]
+        },
+        "ref": {
+            "batch_size": 8,
+            "num_workers": 4,
+            "datasets": [
+                {
+                    "_target_": "src.datasets.celeba.ReferenceDataset",
+                    "root_dir": "../img_align_celeba"
+                }
+            ]
+        }
+    },
+    "wandb_key": "b5bb9b937300c5d613b3a95f676708e5a88d2b7e",
+    "trainer": {
+        "epochs": 5,
+        "save_dir": "saved/",
+        "save_period": 1,
+        "verbosity": 2,
+        "visualize": "wandb",
+        "wandb_project": "StarGANv2",
+        "log_step": 1000,
+        "eval_step": 5000,
+        "latent_dim": 16,
+        "grad_norm_clip": 50
+    }
+}

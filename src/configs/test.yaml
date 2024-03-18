@@ -3,53 +3,32 @@ n_gpu: 1
 
 img_size: 256
 
+checkpoint: path/to/checkpoint.pth
+
 StarGANv2:
-  _target_: src.model.StarGANv2
+  _target_: src.model.model.StarGANv2
   generator_config:
-    _target_: src.model.Generator
     initial_dim: 64
     img_size: 256
     style_dim: 64
     max_conv_dim: 512
   mapping_network_config:
-    _target_: src.model.MappingNetwork
     latent_dim: 16
     style_dim: 64
     hidden_dim: 512
-    num_domains: 2
+    num_domains: 10
   style_encoder_config:
-    _target_: src.model.StyleEncoder
     initial_dim: 64
     img_size: 256
     style_dim: 64
-    num_domains: 2
+    num_domains: 10
     max_conv_dim: 512
   discriminator_config:
-    _target_: src.model.Discriminator
     initial_dim: 64
     img_size: 256
-    num_domains: 2
+    num_domains: 10
     max_conv_dim: 512
-
-batch_size: 8
 
 metrics:
   - _target_: src.metric.LPIPS_Wrapper
     name: LPIPS_Wrapper
-
-loss:
-  _target_: src.loss.StarGANv2Loss
-
-data:
-  train:
-    batch_size: ${batch_size}
-    num_workers: 4
-    datasets:
-      - _target_: src.datasets.celeba.CelebaCustomDataset
-        root_dir: "img_align_celeba"
-  ref:
-    batch_size: ${batch_size}
-    num_workers: 4
-    datasets:
-      - _target_: src.datasets.celeba.ReferenceDataset
-        root_dir: "img_align_celeba"

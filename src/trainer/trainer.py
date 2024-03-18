@@ -58,15 +58,14 @@ class Trainer(BaseTrainer):
             "disc_ref",
             "sty",
             "cyc",
-            "grad norm",
             writer=self.writer,
         )
         self.evaluation_metrics = MetricTracker(
             *[m.name for m in self.metrics], writer=self.writer
         )
 
-        if config.resume is not None:
-            self._resume_checkpoint(config.resume)
+        if config["resume"] is not None:
+            self._resume_checkpoint(config["resume"])
 
     @staticmethod
     def move_batch_to_device(batch, device: torch.device):
@@ -134,7 +133,6 @@ class Trainer(BaseTrainer):
                     continue
                 else:
                     raise e
-            self.train_metrics.update("grad norm", self.get_grad_norm())
             if batch_idx % self.log_step == 0:
                 self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
                 self.logger.debug(
@@ -242,8 +240,7 @@ class Trainer(BaseTrainer):
         self._clip_grad_norm(self.model.generator)
 
         for metric_key in metrics.keys():
-            if metric_key != "grad norm":
-                metrics.update(metric_key, batch[metric_key])
+            metrics.update(metric_key, batch[metric_key])
 
         return batch
 
@@ -258,11 +255,11 @@ class Trainer(BaseTrainer):
         return base.format(current, total, 100.0 * current / total)
 
     @torch.no_grad()
-    def get_grad_norm(self, norm_type=2):
-        parameters = self.model.parameters()
+    def get_grad_norm(self, parameters, norm_type=2):
         if isinstance(parameters, torch.Tensor):
             parameters = [parameters]
         parameters = [p for p in parameters if p.grad is not None]
+
         total_norm = torch.norm(
             torch.stack(
                 [torch.norm(p.grad.detach(), norm_type).cpu() for p in parameters]
